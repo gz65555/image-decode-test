@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+  </head>
+  <body>
+    <canvas id="canvas"></canvas>
+    <script>
+      const canvas = document.getElementById("canvas");
+      const gl = canvas.getContext("webgl");
+      const texture = gl.createTexture();
+      gl.bindTexture(gl.TEXTURE_2D, texture);
+
+      fetch("https://gw.alipayobjects.com/mdn/rms_d14fdd/afts/img/A*5pKFSIF722MAAAAAAAAAAAAAARQnAQ")
+        .then((res) => res.arrayBuffer())
+        .then((ab) => {
+          const arr = [];
+          let start = Date.now();
+          for (let i = 0; i < 500; i++) {
+            arr.push(createImage(new Blob([ab], { type: "image/png" })));
+          }
+          Promise.all(arr).then((images) => {
+            console.log(`create Image cost: `, Date.now() - start);
+            images.forEach((image) => {
+              gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image);
+            });
+            console.log(`total upload cost: `, Date.now() - start);
+          });
+        });
+
+      function createImage(blob) {
+        return new Promise((resolve) => {
+          const image = new Image();
+          image.onload = () => {
+            resolve(image);
+          };
+          image.onerror = (err) => {
+            console.log(err);
+          };
+          image.src = URL.createObjectURL(blob);
+        });
+      }
+    </script>
+  </body>
+</html>

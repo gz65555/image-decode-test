@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+  </head>
+  <body>
+    <canvas id="canvas"></canvas>
+    <script>
+      const canvas = document.getElementById("canvas");
+      const gl = canvas.getContext("webgl");
+      const texture = gl.createTexture();
+      gl.bindTexture(gl.TEXTURE_2D, texture);
+      const decodeWorkers = [];
+      const maxWorkerCount = 7;
+      for (let i = 0; i < maxWorkerCount; i++) {
+        decodeWorkers.push(new Worker("./decode.js"));
+      }
+      let start = 0;
+
+      fetch("https://gw.alipayobjects.com/mdn/rms_d14fdd/afts/img/A*5pKFSIF722MAAAAAAAAAAAAAARQnAQ/80q.webp")
+        .then((res) => res.arrayBuffer())
+        .then((ab) => {
+          const arr = [];
+          start = Date.now();
+          for (let i = 0; i < 500; i++) {
+            arr.push(workerToTexture(ab));
+          }
+          return Promise.all(arr);
+        })
+        .then((images) => {
+          console.log(`decode cost: `, Date.now() - start);
+          images.forEach((image) => {
+            gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image);
+          });
+          console.log(`total upload cost: `, Date.now() - start);
+        });
+
+      let useWorkerIndex = 0;
+      function workerToTexture(ab) {
+        return new Promise((resolve) => {
+          const randomId = Math.floor(Math.random() * 65536);
+          const decodeWorker = decodeWorkers[useWorkerIndex];
+          useWorkerIndex++;
+          useWorkerIndex = useWorkerIndex % maxWorkerCount;
+          decodeWorker.postMessage({ ab, id: randomId });
+          const callback = (e) => {
+            const { image, id } = e.data;
+            if (randomId == id) {
+              resolve(image);
+              decodeWorker.removeEventListener("message", callback);
+            }
+          };
+          decodeWorker.addEventListener("message", callback);
+        });
+      }
+
+      // const image = new Image();
+      // image.crossOrigin = "*";
+      // image.src = "https://gw.alipayobjects.com/mdn/rms_d14fdd/afts/img/A*5pKFSIF722MAAAAAAAAAAAAAARQnAQ/80q.webp";
+      // image.onload = () => {
+      //   createImageBitmap(image).then((bitmap) => {
+      //     const texture = new o3.Texture2D(engine, image.width, image.height);
+      //     texture.setImageSource(bitmap);
+      //   });
+      // };
+    </script>
+  </body>
+</html>
