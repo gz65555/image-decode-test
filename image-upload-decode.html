@@ -15,7 +15,7 @@
 
       const arr = [];
       let start = Date.now();
-      for (let i = 0; i < 2; i++) {
+      for (let i = 0; i < 100; i++) {
         arr.push(requestImage(`./imgs/${i + 1}.jpg`));
       }
       Promise.all(arr).then((images) => {
@@ -32,9 +32,14 @@
           image.crossOrigin = "anonymous";
           image.src = url;
           image.onload = () => {
-            image.decode().then(() => {
-              resolve(image);
-            });
+            image
+              .decode()
+              .then(() => {
+                resolve(image);
+              })
+              .catch((err) => {
+                console.log(url, err);
+              });
           };
           image.onerror = (err) => {
             console.log(err);
