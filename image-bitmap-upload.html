@@ -12,16 +12,25 @@
       const gl = canvas.getContext("webgl");
       const texture = gl.createTexture();
       gl.bindTexture(gl.TEXTURE_2D, texture);
+      const arr = [];
+      for (let i = 0; i < 100; i++) {
+        arr.push(`./imgs/${i + 1}.jpg`);
+      }
 
-      fetch("https://gw.alipayobjects.com/mdn/rms_d14fdd/afts/img/A*5pKFSIF722MAAAAAAAAAAAAAARQnAQ")
-        .then((res) => res.arrayBuffer())
-        .then((ab) => {
-          const arr = [];
+      function createImage(blob) {
+        return new Promise((resolve) => {
+          const image = new Image();
+          image.src = URL.createObjectURL(blob);
+          image.onload = () => {
+            resolve(image);
+          };
+        });
+      }
+
+      Promise.all(arr.map((url) => fetch(url).then((res) => res.blob()))).then((blobs) => {
+        Promise.all(blobs.map(createImage)).then((images) => {
           let start = Date.now();
-          for (let i = 0; i < 500; i++) {
-            arr.push(createImage(new Blob([ab])));
-          }
-          Promise.all(arr).then((images) => {
+          Promise.all(images.map((img) => createImageBitmap(img))).then(() => {
             console.log(`create bitmap cost: `, Date.now() - start);
             images.forEach((image) => {
               gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image);
@@ -29,18 +38,7 @@
             console.log(`total upload cost: `, Date.now() - start);
           });
         });
-
-      function createImage(blob) {
-        return new Promise((resolve) => {
-          const image = new Image();
-          image.src = URL.createObjectURL(blob);
-          image.onload = () => {
-            createImageBitmap(image).then((bitmap) => {
-              resolve(bitmap);
-            });
-          };
-        });
-      }
+      });
     </script>
   </body>
 </html>
