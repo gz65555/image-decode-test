@@ -13,29 +13,27 @@
       const texture = gl.createTexture();
       gl.bindTexture(gl.TEXTURE_2D, texture);
       const decodeWorkers = [];
-      const maxWorkerCount = 7;
+      const maxWorkerCount = 5;
       for (let i = 0; i < maxWorkerCount; i++) {
         decodeWorkers.push(new Worker("./decode.js"));
       }
       let start = 0;
 
-      fetch("https://gw.alipayobjects.com/mdn/rms_d14fdd/afts/img/A*5pKFSIF722MAAAAAAAAAAAAAARQnAQ/80q.webp")
-        .then((res) => res.arrayBuffer())
-        .then((ab) => {
-          const arr = [];
-          start = Date.now();
-          for (let i = 0; i < 500; i++) {
-            arr.push(workerToTexture(ab));
-          }
-          return Promise.all(arr);
-        })
-        .then((images) => {
+      const arr = [];
+      for (let i = 0; i < 100; i++) {
+        arr.push(`./imgs/${i + 1}.jpg`);
+      }
+
+      Promise.all(arr.map((url) => fetch(url).then((res) => res.arrayBuffer()))).then((abs) => {
+        const start = Date.now();
+        Promise.all(abs.map(workerToTexture)).then((images) => {
           console.log(`decode cost: `, Date.now() - start);
           images.forEach((image) => {
             gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image);
           });
           console.log(`total upload cost: `, Date.now() - start);
         });
+      });
 
       let useWorkerIndex = 0;
       function workerToTexture(ab) {
@@ -55,16 +53,6 @@
           decodeWorker.addEventListener("message", callback);
         });
       }
-
-      // const image = new Image();
-      // image.crossOrigin = "*";
-      // image.src = "https://gw.alipayobjects.com/mdn/rms_d14fdd/afts/img/A*5pKFSIF722MAAAAAAAAAAAAAARQnAQ/80q.webp";
-      // image.onload = () => {
-      //   createImageBitmap(image).then((bitmap) => {
-      //     const texture = new o3.Texture2D(engine, image.width, image.height);
-      //     texture.setImageSource(bitmap);
-      //   });
-      // };
     </script>
   </body>
 </html>
