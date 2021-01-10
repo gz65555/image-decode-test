@@ -14,16 +14,18 @@
       gl.bindTexture(gl.TEXTURE_2D, texture);
 
       const arr = [];
-      let start = Date.now();
       for (let i = 0; i < 100; i++) {
         arr.push(requestImage(`./imgs/${i + 1}.jpg`));
       }
       Promise.all(arr).then((images) => {
-        console.log(`create Image cost: `, Date.now() - start);
-        images.forEach((image) => {
-          gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image);
+        let start = Date.now();
+        Promise.all(images.map((img) => img.decode())).then(() => {
+          console.log(`decode Image cost: `, Date.now() - start);
+          images.forEach((image) => {
+            gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image);
+          });
+          console.log(`total upload cost: `, Date.now() - start);
         });
-        console.log(`total upload cost: `, Date.now() - start);
       });
 
       function requestImage(url) {
@@ -32,14 +34,7 @@
           image.crossOrigin = "anonymous";
           image.src = url;
           image.onload = () => {
-            image
-              .decode()
-              .then(() => {
-                resolve(image);
-              })
-              .catch((err) => {
-                console.log(url, err);
-              });
+            resolve(image);
           };
           image.onerror = (err) => {
             console.log(err);
