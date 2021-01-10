@@ -13,32 +13,21 @@
       const texture = gl.createTexture();
       gl.bindTexture(gl.TEXTURE_2D, texture);
 
-      fetch("https://gw.alipayobjects.com/mdn/rms_d14fdd/afts/img/A*5pKFSIF722MAAAAAAAAAAAAAARQnAQ")
-        .then((res) => res.arrayBuffer())
-        .then((ab) => {
-          const arr = [];
-          let start = Date.now();
-          for (let i = 0; i < 500; i++) {
-            arr.push(createImageBitmap(new Blob([ab], {type: 'image/png'})));
-          }
-          Promise.all(arr).then((images) => {
-            console.log(`decode cost: `, Date.now() - start);
-            images.forEach((image) => {
-              gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image);
-            });
-            console.log(`total upload cost: `, Date.now() - start);
-          });
-        });
+      const arr = [];
+      for (let i = 0; i < 100; i++) {
+        arr.push(`./imgs/${i + 1}.jpg`);
+      }
 
-      // const image = new Image();
-      // image.crossOrigin = "*";
-      // image.src = "https://gw.alipayobjects.com/mdn/rms_d14fdd/afts/img/A*5pKFSIF722MAAAAAAAAAAAAAARQnAQ/80q.webp";
-      // image.onload = () => {
-      //   createImageBitmap(image).then((bitmap) => {
-      //     const texture = new o3.Texture2D(engine, image.width, image.height);
-      //     texture.setImageSource(bitmap);
-      //   });
-      // };
+      Promise.all(arr.map((url) => fetch(url).then((res) => res.blob()))).then((blobs) => {
+        let start = Date.now();
+        Promise.all(blobs.map((blob) => createImageBitmap(blob))).then((bitmaps) => {
+          console.log(`decode cost: `, Date.now() - start);
+          bitmaps.forEach((image) => {
+            gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image);
+          });
+          console.log(`total upload cost: `, Date.now() - start);
+        });
+      });
     </script>
   </body>
 </html>
