@@ -4,6 +4,8 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>image decode</title>
+    <script src="eruda/eruda.js"></script>
+    <script>eruda.init();</script>
   </head>
   <body>
     <div>使用 image decode 方法解码</div>
@@ -22,10 +24,13 @@
         let start = Date.now();
         Promise.all(images.map((img) => img.decode())).then(() => {
           console.log(`decode Image cost: `, Date.now() - start);
+          // setTimeout(() => {
+          const d = Date.now();
           images.forEach((image) => {
             gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image);
           });
-          console.log(`total upload cost: `, Date.now() - start);
+          console.log(`upload cost: `, Date.now() - d);
+          // }, 1000);
         });
       });
 
